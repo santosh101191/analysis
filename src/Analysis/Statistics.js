@@ -4,7 +4,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 
 import Select from '@material-ui/core/Select';
 import './analysisStyle.css';
-
+var _ = require('lodash');
 
 const extractData = require('../assets/dropdown.json');
 const EXTRACT_STS = 4; //id of list to be shown in extract dropdown
@@ -19,7 +19,10 @@ export default class Statistics extends React.Component {
     this.state = {
       extractSelected: '',
       filterSelected: '',
-      hideFilter: false,
+      hideFilter: true,
+      filterDataValues: [],
+      columnsDataValues: [],
+      rowDataValues: [],
       columnData: [
         { name: 'Column1', id: 1 },
         { name: 'Column 2', id: 2 },
@@ -47,40 +50,112 @@ export default class Statistics extends React.Component {
   drag(ev) {
     ev.dataTransfer.setData("text", ev.target.id);
   }
-
-  drop(ev) {
+  /**
+   * called on dropping element
+   * @param {event} ev 
+   * @param {component this} _this 
+   */
+  drop(ev, _this) {
     ev.preventDefault();
     var data = ev.dataTransfer.getData("text");
     if (document.getElementById(data) && ev.target.id != data) {
+
+      let dataAdded = document.getElementById(data).textContent //data that is dragged
       ev.target.appendChild(document.getElementById(data));
+      _this.checkForValues(ev, dataAdded);
     }
 
   }
-  toggleFilter(type) {
-    console.log("type:", type)
-    debugger;
-    if (type == 'hide') {
-      this.setState({ hideFilter: true })
-    } else {
-      this.setState({ hideFilter: false })
+  /**
+   * update array values  of headerRow "Columns", "Rows", "Filters"
+   * @param {event } ev 
+   * @param {data dargged and dropped} dataAdded 
+   */
+  checkForValues(ev, dataAdded) {
+    let headerRowValues = {
+      filterDataValues: this.state.filterDataValues,
+      columnsDataValues: this.state.columnsDataValues,
+      rowDataValues: this.state.rowDataValues
     }
-  }
-  onDragEnd(result) {
-    // dropped outside the list
-    if (!result.destination) {
-      return;
-    } else {
-      const columnData = this.reorder(
-        this.state.columnData,
-        result.source.index,
-        result.destination.index
-      );
 
-      this.setState({
-        columnData
-      });
+    let targetToAdd = ev.target.previousSibling; //to identify headerRow target 
+    if (targetToAdd && targetToAdd.wholeText) {
+      targetToAdd = targetToAdd.wholeText.trim()
+    }
+    let findIndexFilter = headerRowValues['filterDataValues'].findIndex(item => {
+      return item == dataAdded;
+    })
+    let findIndexColumn = headerRowValues['columnsDataValues'].findIndex(item => {
+      return item == dataAdded;
+    })
+
+    let findIndexRow = headerRowValues['rowDataValues'].findIndex(item => {
+      return item == dataAdded;
+    })
+
+    switch (targetToAdd) {
+
+      case "Rows":
+        if (findIndexRow === -1) {
+          headerRowValues['rowDataValues'].push(dataAdded);
+        }
+        if (findIndexColumn > -1) {
+          headerRowValues['columnsDataValues'].splice(findIndexColumn, 1);
+        }
+        if (findIndexFilter > -1) {
+          headerRowValues['filterDataValues'].splice(findIndexFilter, 1);
+        }
+
+        break;
+      case "Columns":
+        if (findIndexColumn === -1) {
+          headerRowValues['columnsDataValues'].push(dataAdded);
+        }
+        if (findIndexRow > -1) {
+          headerRowValues['rowDataValues'].splice(findIndexRow, 1);
+        }
+        if (findIndexFilter > -1) {
+          headerRowValues['filterDataValues'].splice(findIndexFilter, 1);
+        }
+        break;
+      case "Filters":
+        if (findIndexFilter === -1) {
+          headerRowValues['filterDataValues'].push(dataAdded);
+        }
+        if (findIndexRow > -1) {
+          headerRowValues['rowDataValues'].splice(findIndexRow, 1);
+        }
+        if (findIndexColumn > -1) {
+          headerRowValues['columnsDataValues'].splice(findIndexColumn, 1);
+        }
+        break;
+      default:
+        if (findIndexFilter > -1) {
+          headerRowValues['filterDataValues'].splice(findIndexFilter, 1);
+        }
+        if (findIndexRow > -1) {
+          headerRowValues['rowDataValues'].splice(findIndexRow, 1);
+        }
+        if (findIndexColumn > -1) {
+          headerRowValues['filterDataValues'].splice(findIndexColumn, 1);
+        }
+    }
+    // updating values of headerRow
+    const valuesToUpdate = ["filterDataValues", "rowDataValues", "columnsDataValues" ];
+    valuesToUpdate.forEach(item =>{
+      this.setState({item: headerRowValues[item]});
+    });
+   
+    console.log(headerRowValues);
+    // showing filter based on values on headerRow Filter
+    if (headerRowValues['filterDataValues'].length > 0) {
+      this.setState({ hideFilter: false });
+    }
+    else {
+      this.setState({ hideFilter: true });
     }
   }
+
   renderFilterOptions() {
     let filterOptions = [{
       name: 'Filter1',
@@ -102,14 +177,17 @@ export default class Statistics extends React.Component {
     })
 
     return (
-      <Select
-        labelId="select-filter-label"
-        id="select-filter1"
-        style={{ width: "10em" }}
-        value={this.state.filterSelected}
-        onChange={(e) => { this.handleFilterChange(e) }}
-      >{toRender}
-      </Select>
+      <div>
+        <span><label>FILTERS</label></span>
+        <Select
+          labelId="select-filter-label"
+          id="select-filter1"
+          style={{ width: "10em" }}
+          value={this.state.filterSelected}
+          onChange={(e) => { this.handleFilterChange(e) }}
+        >{toRender}
+        </Select>
+      </div>
     )
   }
 
@@ -147,7 +225,7 @@ export default class Statistics extends React.Component {
         <span><label>COLUMNS</label></span>
         <div className="columnListDropDown">
 
-          <div id="dragzone-1" className="columnList" onDrop={(ev) => { this.drop(ev) }} onDragOver={this.allowDrop}>
+          <div id="dragzone-1" className="columnList" onDrop={(ev) => { this.drop(ev, this) }} onDragOver={this.allowDrop}>
             {toRender}
           </div>
         </div>
@@ -157,9 +235,9 @@ export default class Statistics extends React.Component {
   }
   render() {
     return (
-      <div>
+      <div class="container">
 
-        <div className="row">
+        <div className="row" draggable >
           <div className="small-24 medium-12 large-24 column">
 
             <h2>Stats Per Completion</h2>
@@ -171,10 +249,7 @@ export default class Statistics extends React.Component {
                   <span><label>EXTRACTS</label></span>
                   {this.renderExtractOptions()}
 
-                  {this.state.hideFilter ? this.renderFilterOptions() : <div></div>}
-
-
-
+                  {this.state.hideFilter ? <div></div> :this.renderFilterOptions()  }
                   {this.renderColumData()}
 
                 </div>
@@ -188,11 +263,13 @@ export default class Statistics extends React.Component {
 
                   <div className="  large-24 row">
 
-                    <div className="large-8 column"><i className="fa fa-columns"></i> Columns <div id="dropzone-column" className="dropzone" onDrop={this.drop} onDragOver={this.allowDrop} placeholder="dropzone"></div></div>
+                    <div className="large-8 column"><i className="fa fa-columns"></i> Columns <div id="dropzone-column" className="dropzone" onDrop={(e) => { this.drop(e, this) }} onDragOver={this.allowDrop} placeholder="dropzone"></div></div>
 
-                    <div className="large-8 column"><i className="fa fa-align-justify"></i> Rows <div id="dropzone-rows" className="dropzone" onDrop={this.drop} onDragOver={this.allowDrop}></div></div>
+                    <div className="large-8 column"><i className="fa fa-align-justify"></i> Rows <div id="dropzone-rows" className="dropzone" onDrop={(e) => { this.drop(e, this) }} onDragOver={this.allowDrop}></div></div>
 
-                    <div className="large-8 column"><i className="fa fa-filter"></i> Filters <div id="dropzone-filter" className="dropzone" onDragOver={(event) => { this.allowDrop(event) }} onDrop={(e) => { this.drop(e) && this.toggleFilter() }} onDragLeave={() => { this.toggleFilter('remove') }} ></div>
+                    <div className="large-8 column"><i className="fa fa-filter"></i> Filters <div id="dropzone-filter" className="dropzone" onDragOver={(event) => { this.allowDrop(event) }} onDrop={(e) => { this.drop(e, this);}}>
+
+                    </div>
                     </div></div>
                 </div>
               </div>
