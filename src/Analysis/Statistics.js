@@ -7,6 +7,7 @@ import './analysisStyle.css';
 var _ = require('lodash');
 
 const extractData = require('../assets/dropdown.json');
+const columnJSON = require('../assets/columns.json');
 const EXTRACT_STS = 4; //id of list to be shown in extract dropdown
 
 
@@ -23,15 +24,7 @@ export default class Statistics extends React.Component {
       filterDataValues: [],
       columnsDataValues: [],
       rowDataValues: [],
-      columnData: [
-        { name: 'Column1', id: 1 },
-        { name: 'Column 2', id: 2 },
-        { name: 'Column 3', id: 3 },
-        { name: 'Column_4_whatever_long_name', id: 4 },
-        { name: 'Column 5', id: 5 },
-        { name: 'Column_6 Another Name', id: 6 },
-
-      ],
+      columnData: columnJSON,
     }
     this.renderExtractOptions = this.renderExtractOptions.bind(this);
     this.handleExtractChange = this.handleExtractChange.bind(this);
@@ -145,7 +138,7 @@ export default class Statistics extends React.Component {
     valuesToUpdate.forEach(item =>{
       this.setState({item: headerRowValues[item]});
     });
-   
+   debugger;
     console.log(headerRowValues);
     // showing filter based on values on headerRow Filter
     if (headerRowValues['filterDataValues'].length > 0) {
@@ -169,10 +162,20 @@ export default class Statistics extends React.Component {
       name: 'Filter3',
       id: 3
     }
-    ]
+    ];
+   let  filterValues = [];
+this.state.columnData.forEach(item =>{
+
+this.state.filterDataValues.forEach(item2 =>{
+
+	filterValues.push(item[item2])
+});
+
+});
+  filterOptions = _.uniqBy(filterValues);
     let toRender = filterOptions.map((item, index) => {
       return (
-        (<MenuItem key={`${item.name}-${index}`} value={item.name}>{item.name}</MenuItem>)
+        (<MenuItem key={`${item}-${index}`} value={item}>{item}</MenuItem>)
       )
     })
 
@@ -184,8 +187,13 @@ export default class Statistics extends React.Component {
           id="select-filter1"
           style={{ width: "10em" }}
           value={this.state.filterSelected}
+          displayEmpty
           onChange={(e) => { this.handleFilterChange(e) }}
-        >{toRender}
+        >
+          <MenuItem value="" disabled>
+            Please Select
+          </MenuItem>
+          {toRender}
         </Select>
       </div>
     )
@@ -206,17 +214,24 @@ export default class Statistics extends React.Component {
         id="select-extract"
         style={{ width: "10em" }}
         value={this.state.extractSelected}
+        displayEmpty
         onChange={(e) => { this.handleExtractChange(e) }}
-      >{toRender}
+      >
+         <MenuItem value="" disabled>
+         Please Select
+          </MenuItem>
+        {toRender}
       </Select>
     )
   }
 
   renderColumData() {
-    let toRender = this.state.columnData.map((item, index) => {
+  
+    console.log(Object.keys(this.state.columnData[0]));
+    let toRender = Object.keys(this.state.columnData[0]).map((item, index) => {
       return (
-        <div key={`${item.name}-${index}`} draggable="true" onDragStart={(ev) => { this.drag(ev) }} id={`${item.name}-${index}`} className="dragger">
-          {item.name}
+        <div key={`${item}-${index}`} draggable="true" onDragStart={(ev) => { this.drag(ev) }} id={`${item}-${index}`} className="dragger">
+          {item}
         </div>
       )
     })
