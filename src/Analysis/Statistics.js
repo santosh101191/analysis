@@ -65,7 +65,7 @@ export default class Statistics extends React.Component {
   drop(ev, _this) {
     ev.preventDefault();
     var data = ev.dataTransfer.getData("text");
-    if (document.getElementById(data) && ev.target.id != data) {
+    if (document.getElementById(data) && ev.target.id !== data) {
 
       let dataAdded = document.getElementById(data).textContent //data that is dragged
       ev.target.appendChild(document.getElementById(data));
@@ -94,14 +94,14 @@ export default class Statistics extends React.Component {
       targetToAdd = targetToAdd.wholeText.trim()
     }
     let findIndexFilter = headerRowValues['filterDataValues'].findIndex(item => {
-      return item == dataAdded;
+      return item === dataAdded;
     })
     let findIndexColumn = headerRowValues['columnsDataValues'].findIndex(item => {
-      return item == dataAdded;
+      return item === dataAdded;
     })
 
     let findIndexRow = headerRowValues['rowDataValues'].findIndex(item => {
-      return item == dataAdded;
+      return item === dataAdded;
     })
 
     switch (targetToAdd) {
@@ -227,7 +227,7 @@ export default class Statistics extends React.Component {
 
   renderExtractOptions() {
     let extractOptions = extractData.filter(data => {
-      return data.Ext_Sts == EXTRACT_STS;
+      return data.Ext_Sts === EXTRACT_STS;
     })
 
     let toRender = extractOptions.map((item, index) => {

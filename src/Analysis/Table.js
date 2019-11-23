@@ -22,14 +22,14 @@ const SpanningTable = ({ rowTableData, columnsTableData, filterSelected, columnD
   console.log(rowTableData, columnsTableData, filterSelected, columnData);
   let tableRowHead = [];
   let tableColumnHead = [];
-  let tableBodyData = []
+
   const classes = useStyles();
   let colSpan = 0;
   let rowSpan = 0
   var keyFilter = '';
   if (filterSelected.value) {
     var findIndex = Object.keys(columnData[0]).findIndex(item2 => {
-      return item2 == filterSelected.key
+      return item2 === filterSelected.key
     })
     if (findIndex > -1) {
       keyFilter = Object.keys(columnData[0])[findIndex];
@@ -43,7 +43,7 @@ const SpanningTable = ({ rowTableData, columnsTableData, filterSelected, columnD
     rowTableData['namesonTop'].forEach(item2 => {
       columnData.forEach(item => {
         if (keyFilter) {
-          if ((item[keyFilter] == filterSelected.value)) {
+          if ((item[keyFilter] === filterSelected.value)) {
             rowTableData['itemsInRow'].push({ key: item2, value: item[item2] })
           }
         }
@@ -66,7 +66,7 @@ const SpanningTable = ({ rowTableData, columnsTableData, filterSelected, columnD
     columnsTableData['namesonTop'].forEach(item2 => {
       columnData.forEach(item => {
         if (keyFilter) {
-          if ((item[keyFilter] == filterSelected.value)) {
+          if ((item[keyFilter] === filterSelected.value)) {
             columnsTableData['itemsInColumn'].push({ key: item2, value: item[item2] })
           }
         }
@@ -116,7 +116,7 @@ const SpanningTable = ({ rowTableData, columnsTableData, filterSelected, columnD
             {rowTableData['itemsInRow'] && rowTableData['itemsInRow'].length ?
               rowTableData['itemsInRow'].map((row, index) => (
                 <TableRow hover key={`row-${index}`}>
-                  <TableCell colSpan={colSpan + 1}>{row.value}</TableCell>
+                  <TableCell colSpan={colSpan + rowSpan}>{row.value}</TableCell>
                 </TableRow>
               )) : null}
 
