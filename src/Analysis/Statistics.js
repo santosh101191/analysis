@@ -4,6 +4,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 
 import Select from '@material-ui/core/Select';
 import './analysisStyle.css';
+import SpanningTable from './Table';
 var _ = require('lodash');
 
 const extractData = require('../assets/dropdown.json');
@@ -11,7 +12,9 @@ const columnJSON = require('../assets/columns.json');
 const EXTRACT_STS = 4; //id of list to be shown in extract dropdown
 
 
-
+let columnsTableData = {};
+let rowTableData = {};
+let filterOptions = [];
 export default class Statistics extends React.Component {
 
   constructor() {
@@ -19,11 +22,15 @@ export default class Statistics extends React.Component {
     super();
     this.state = {
       extractSelected: '',
-      filterSelected: '',
+      filterSelected: {
+        value: '',
+        key: ''
+      },
       hideFilter: true,
       filterDataValues: [],
       columnsDataValues: [],
       rowDataValues: [],
+      updateTable: false,
       columnData: columnJSON,
     }
     this.renderExtractOptions = this.renderExtractOptions.bind(this);
@@ -35,7 +42,14 @@ export default class Statistics extends React.Component {
     this.setState({ extractSelected: e.target.value })
   }
   handleFilterChange(e) {
-    this.setState({ filterSelected: e.target.value })
+    let valueSelected = e.target.value;
+    var findIndex = filterOptions.findIndex((item) => {
+      return item.value = valueSelected;
+    })
+    if (findIndex > -1) {
+      this.setState({ filterSelected: filterOptions[findIndex] });
+    }
+    console.log(this.state.filterSelected);
   }
   allowDrop(ev) {
     ev.preventDefault();
@@ -59,6 +73,10 @@ export default class Statistics extends React.Component {
     }
 
   }
+  resetTableData() {
+    columnsTableData = {};
+    rowTableData = {};
+  }
   /**
    * update array values  of headerRow "Columns", "Rows", "Filters"
    * @param {event } ev 
@@ -70,7 +88,7 @@ export default class Statistics extends React.Component {
       columnsDataValues: this.state.columnsDataValues,
       rowDataValues: this.state.rowDataValues
     }
-
+    this.resetTableData();
     let targetToAdd = ev.target.previousSibling; //to identify headerRow target 
     if (targetToAdd && targetToAdd.wholeText) {
       targetToAdd = targetToAdd.wholeText.trim()
@@ -130,15 +148,14 @@ export default class Statistics extends React.Component {
           headerRowValues['rowDataValues'].splice(findIndexRow, 1);
         }
         if (findIndexColumn > -1) {
-          headerRowValues['filterDataValues'].splice(findIndexColumn, 1);
+          headerRowValues['columnsDataValues'].splice(findIndexColumn, 1);
         }
     }
     // updating values of headerRow
-    const valuesToUpdate = ["filterDataValues", "rowDataValues", "columnsDataValues" ];
-    valuesToUpdate.forEach(item =>{
-      this.setState({item: headerRowValues[item]});
+    const valuesToUpdate = ["filterDataValues", "rowDataValues", "columnsDataValues"];
+    valuesToUpdate.forEach(item => {
+      this.setState({ item: headerRowValues[item] });
     });
-   debugger;
     console.log(headerRowValues);
     // showing filter based on values on headerRow Filter
     if (headerRowValues['filterDataValues'].length > 0) {
@@ -146,36 +163,44 @@ export default class Statistics extends React.Component {
     }
     else {
       this.setState({ hideFilter: true });
+      this.setState({ filterSelected: { key: '', value: '' } })
+    }
+
+    if (headerRowValues['rowDataValues'].length > 0) {
+
+      rowTableData = {
+        namesonTop: headerRowValues['rowDataValues'],
+        itemsInRow: []
+      }
+
+      let updateTable = this.state.updateTable;
+      this.setState({ updateTable: !updateTable });
+    }
+    if (headerRowValues['columnsDataValues'].length > 0) {
+
+      columnsTableData = {
+        namesonTop: headerRowValues['columnsDataValues'],
+        itemsInColumn: []
+      }
     }
   }
 
   renderFilterOptions() {
-    let filterOptions = [{
-      name: 'Filter1',
-      id: 1
-    },
-    {
-      name: 'Filter2',
-      id: 2
-    },
-    {
-      name: 'Filter3',
-      id: 3
-    }
-    ];
-   let  filterValues = [];
-this.state.columnData.forEach(item =>{
 
-this.state.filterDataValues.forEach(item2 =>{
+    let filterValues = [];
+    this.state.filterDataValues.forEach(item2 => {
+      this.state.columnData.forEach(item => {
 
-	filterValues.push(item[item2])
-});
-
-});
-  filterOptions = _.uniqBy(filterValues);
+        filterValues.push({ key: item2, value: item[item2] })
+      });
+      filterValues = _.uniqBy(filterValues, function (data) {
+        return data.value;
+      });
+    });
+    filterOptions = filterValues
     let toRender = filterOptions.map((item, index) => {
       return (
-        (<MenuItem key={`${item}-${index}`} value={item}>{item}</MenuItem>)
+        (<MenuItem key={`${item.value}-${index}`} value={item.value}>{item.value}</MenuItem>)
       )
     })
 
@@ -186,7 +211,7 @@ this.state.filterDataValues.forEach(item2 =>{
           labelId="select-filter-label"
           id="select-filter1"
           style={{ width: "10em" }}
-          value={this.state.filterSelected}
+          value={this.state.filterSelected.value}
           displayEmpty
           onChange={(e) => { this.handleFilterChange(e) }}
         >
@@ -217,8 +242,8 @@ this.state.filterDataValues.forEach(item2 =>{
         displayEmpty
         onChange={(e) => { this.handleExtractChange(e) }}
       >
-         <MenuItem value="" disabled>
-         Please Select
+        <MenuItem value="" disabled>
+          Please Select
           </MenuItem>
         {toRender}
       </Select>
@@ -226,7 +251,7 @@ this.state.filterDataValues.forEach(item2 =>{
   }
 
   renderColumData() {
-  
+
     console.log(Object.keys(this.state.columnData[0]));
     let toRender = Object.keys(this.state.columnData[0]).map((item, index) => {
       return (
@@ -264,7 +289,7 @@ this.state.filterDataValues.forEach(item2 =>{
                   <span><label>EXTRACTS</label></span>
                   {this.renderExtractOptions()}
 
-                  {this.state.hideFilter ? <div></div> :this.renderFilterOptions()  }
+                  {this.state.hideFilter ? <div></div> : this.renderFilterOptions()}
                   {this.renderColumData()}
 
                 </div>
@@ -282,15 +307,20 @@ this.state.filterDataValues.forEach(item2 =>{
 
                     <div className="large-8 column"><i className="fa fa-align-justify"></i> Rows <div id="dropzone-rows" className="dropzone" onDrop={(e) => { this.drop(e, this) }} onDragOver={this.allowDrop}></div></div>
 
-                    <div className="large-8 column"><i className="fa fa-filter"></i> Filters <div id="dropzone-filter" className="dropzone" onDragOver={(event) => { this.allowDrop(event) }} onDrop={(e) => { this.drop(e, this);}}>
+                    <div className="large-8 column"><i className="fa fa-filter"></i> Filters <div id="dropzone-filter" className="dropzone" onDragOver={(event) => { this.allowDrop(event) }} onDrop={(e) => { this.drop(e, this); }}>
 
                     </div>
-                    </div></div>
+                    </div>
+
+                  </div>
+                  <SpanningTable rowTableData={rowTableData} columnsTableData={columnsTableData} columnData={this.state.columnData} filterSelected={this.state.filterSelected} />
                 </div>
               </div>
             </div>
           </div>
+
         </div>
+
       </div>
     )
   }
