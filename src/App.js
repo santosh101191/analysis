@@ -6,7 +6,7 @@ import Statistics from './Analysis/Statistics';
 function App() {
   return (
     <div >
-      <Statistics in React/>
+      <Statistics />in React
     </div>
   );
 }
